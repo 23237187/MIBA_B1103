@@ -165,7 +165,7 @@ trait LEvents {
           if (required.isDefined) {
             dm.filter {
               case (k, v) =>
-                required.get.map(v.contains(_)).reduce(_&&_)
+                required.get.map(v.contains(_)).reduce(_&&_)//&& 是逻辑操作符，生成供filter 判断的boolean值
             }
           } else dm
       }
