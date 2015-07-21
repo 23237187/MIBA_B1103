@@ -2,15 +2,25 @@ package zte.MBA.data.storage
 
 import org.joda.time.DateTime
 
+/**
+ * 提供将[[Event]]s 聚合为 [[LEvents]]的服务
+ *将一组对特定对象的一系列属性操作市委一串events, 则将这些events的效果按时序逻辑叠加,得到的状态既是对象最终状态,称为聚合
+ * events -> 状态
+ */
 object LEventAggregator {
 
+  /**
+   * 从一个events集合中,将每个独特的EntityId代表的实体进行聚合,确定实体的状态
+   * @param events 待聚合事件集合
+   * @return 一个Map key是EntityId, value是一个PropertyMap,代表该实体的状态
+   */
   def aggregateProperties(events: Iterator[Event]): Map[String, PropertyMap] = {
     events.toList
-      .groupBy(_.entityId)
-      .mapValues(_.sortBy(_.eventTime.getMillis)
-        .foldLeft[Prop](Prop())(propAggregator))
-      .filter{ case (k, v) => v.dm.isDefined }
-      .mapValues{ v =>
+      .groupBy(_.entityId)//按eventityID成组, key是entityID
+      .mapValues(_.sortBy(_.eventTime.getMillis)//mapValues 只对 Value操作
+        .foldLeft[Prop](Prop())(propAggregator))//计算每个entityID的状态,聚合.状态是一个Prop对象 Map[entityId, Prop]
+      .filter{ case (k, v) => v.dm.isDefined }//去掉空的状态
+      .mapValues{ v => //v是一个Prop对象
         require(v.firstUpdated.isDefined,
           "Unexpected Error: firstUpdated cannot be None.")
         require(v.lastUpdated.isDefined,
@@ -20,10 +30,15 @@ object LEventAggregator {
           fields = v.dm.get.fields,
           firstUpdated = v.firstUpdated.get,
           lastUpdated = v.lastUpdated.get
-        )
+        )//Prop -> PropertyMap
       }
   }
 
+  /**
+   * 针对单独entityId的聚合版本
+   * @param events
+   * @return
+   */
   def aggregatePropertiesSingle(events: Iterator[Event])
   : Option[PropertyMap] = {
     val prop = events.toList
@@ -44,6 +59,7 @@ object LEventAggregator {
     }
   }
 
+  //能够实际对状态产生影响的事件类型
   val eventNames = List("$set", "$unset", "$delete")
 
   private

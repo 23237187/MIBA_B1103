@@ -18,5 +18,20 @@
     <orderEntry type="library" exported="" name="SBT: org.scala-lang:scalap:2.10.0:jar" level="project" />
     <orderEntry type="library" exported="" name="SBT: org.json4s:json4s-ast_2.10:3.2.10:jar" level="project" />
     <orderEntry type="library" exported="" name="SBT: org.json4s:json4s-core_2.10:3.2.10:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hadoop:hadoop-annotations:2.5.0:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hadoop:hadoop-auth:2.5.0:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hadoop:hadoop-common:2.5.0:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hbase:hbase-client:0.98.5-hadoop2:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hbase:hbase-common:0.98.5-hadoop2:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hbase:hbase-prefix-tree:0.98.5-hadoop2:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hbase:hbase-protocol:0.98.5-hadoop2:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.hbase:hbase-server:0.98.5-hadoop2:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.httpcomponents:httpclient:4.2.5:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.httpcomponents:httpcore:4.2.4:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.zookeeper:zookeeper:3.4.6:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.commons:commons-compress:1.4.1:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.commons:commons-math3:3.1.1:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: org.apache.commons:commons-math:2.1:jar" level="project" />
+    <orderEntry type="library" exported="" name="SBT: commons-codec:commons-codec:1.9:jar" level="project" />
   </component>
 </module>
