@@ -4,5 +4,6 @@
     <file url="file://$PROJECT_DIR$/data/src/main/scala/zte/MBA/data/storage/DataMap.scala" charset="GBK" />
     <file url="file://$PROJECT_DIR$/data/src/main/scala/zte/MBA/data/storage/Event.scala" charset="GBK" />
     <file url="file://$PROJECT_DIR$/data/src/main/scala/zte/MBA/data/storage/LEvents.scala" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/data/src/main/scala/zte/MBA/data/storage/Storage.scala" charset="GBK" />
   </component>
 </project>

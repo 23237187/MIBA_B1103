@@ -2,8 +2,6 @@ package zte.MBA.data.storage
 
 import grizzled.slf4j.Logging
 
-import scala.reflect.api.TypeTags.TypeTag
-import scala.reflect.api.TypeTags.TypeTag
 
 import scala.reflect.runtime.universe._
 
@@ -28,7 +26,7 @@ class StorageException(message: String, cause: Throwable)
   def this(message:String) = this(message, null)
 }
 
-//当需要一个与Event存储的接口时，使用这个对象
+//当需要一个Event存储的接口时，使用这个对象
 object Storage extends Logging{
   private case class ClientMeta(
     sourceType: String,
@@ -101,8 +99,8 @@ object Storage extends Logging{
           }
         } catch {
           case e: Throwable =>
-            error(e.getMessage)
             errors += 1
+            error(e.getMessage)
             r -> DataObjectMeta("", "")
         }
     ).toMap

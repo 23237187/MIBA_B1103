@@ -197,8 +197,8 @@ trait LEvents {
         channelId = channelId,
         startTime = startTime,
         untilTime = untilTime,
-        entityType = entityType,
-        entityId = entityId,
+        entityType = Some(entityType),
+        entityId = Some(entityId),
         eventNames = Some(LEventAggregator.eventNames)
       ).map{
         eventIt =>
