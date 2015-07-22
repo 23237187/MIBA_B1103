@@ -24,6 +24,8 @@ libraryDependencies ++= Seq(
     exclude("org.mortbay.jetty", "jsp-2.1"),
   "org.apache.zookeeper"    % "zookeeper"      % "3.4.6"
     exclude("org.slf4j", "slf4j-api")
-    exclude("org.slf4j", "slf4j-log4j12"))
+    exclude("org.slf4j", "slf4j-log4j12"),
+  "org.apache.spark"       %% "spark-core"     % "1.3.0" % "provided",
+  "org.apache.spark"       %% "spark-sql"      % "1.3.0" % "provided")
 
     
