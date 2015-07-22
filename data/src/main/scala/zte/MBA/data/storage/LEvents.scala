@@ -24,6 +24,8 @@ trait LEvents {
     */
   def init(appId: Int, channelId: Option[Int] = None): Boolean
 
+  def remove(appId: Int, channelId: Option[Int] = None): Boolean
+
   /**
    * 关闭Event存储接口对象，关闭数据库连接，释放资源等
    */
