@@ -2,13 +2,17 @@ package zte.MBA.data.storage.hbase
 
 import java.security.MessageDigest
 import java.util.UUID
-import org.apache.commons.codec.binary.Base64
-import org.apache.hadoop.hbase.client.Put
-import org.apache.hadoop.hbase.util.Bytes
-import org.json4s.DefaultFormats
-import org.json4s.native.Serialization.{read, write }
 
-import zte.MBA.data.storage.{EventValidation, Event}
+import org.apache.commons.codec.binary.Base64
+import org.apache.hadoop.hbase.client.{Scan, Result, Put}
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp
+import org.apache.hadoop.hbase.filter._
+import org.apache.hadoop.hbase.util.Bytes
+import org.joda.time.{DateTimeZone, DateTime}
+import org.json4s.DefaultFormats
+import org.json4s.JsonAST.JObject
+import org.json4s.native.Serialization.{read, write}
+import zte.MBA.data.storage.{DataMap, Event, EventValidation}
 
 
 object HBEventsUtil {
@@ -154,7 +158,213 @@ object HBEventsUtil {
       addStringToE(colNames("eventTimeZone"), eventTimeZone.getID)
     }
 
+    addLongToE(colNames("creationTime"), event.creationTime.getMillis)
+    val creationTimeZone = event.creationTime.getZone
+    if (!creationTimeZone.equals(EventValidation.defaultTimeZone)) {
+      addStringToE(colNames("creationTimeZone"), creationTimeZone.getID)
+    }
+
+    (put, rowKey)
+
   }
 
+  def resultToEvent(result: Result, appId: Int): Event = {
+    val rowKey = RowKey(result.getRow())
 
+    val eBytes = Bytes.toBytes("e")
+
+    def getStringCol(col: String): String = {
+      val r = result.getValue(eBytes, colNames(col))
+      require(r != null,
+        s"Failed to get value for column ${col}. " +
+          s"RowKey: ${rowKey.toString} " +
+          s"StringBinary: ${Bytes.toStringBinary(result.getRow())}.")
+
+      Bytes.toString(r)
+    }
+
+    def getLongCol(col: String): Long = {
+      val r = result.getValue(eBytes, colNames(col))
+      require(r != null,
+        s"Failed to get value for column ${col}. " +
+          s"RowKey: ${rowKey.toString} " +
+          s"StringBinary: ${Bytes.toStringBinary(result.getRow())}.")
+
+      Bytes.toLong(r)
+    }
+
+    def getOptStringCol(col: String): Option[String] = {
+      val r = result.getValue(eBytes, colNames(col))
+      if (r == null) {
+        None
+      } else {
+        Some(Bytes.toString(r))
+      }
+    }
+
+    def getTimestamp(col: String): Long = {
+      result.getColumnLatestCell(eBytes, colNames(col)).getTimestamp()
+    }
+
+    val event = getStringCol("event")
+    val entityType = getStringCol("entityType")
+    val entityId = getStringCol("entityId")
+    val targetEntityType = getOptStringCol("targetEntityType")
+    val targetEntityId = getOptStringCol("targetEntityId")
+    val properties: DataMap = getOptStringCol("properties")
+      .map(s => DataMap(read[JObject](s))).getOrElse(DataMap())
+    val prId = getOptStringCol("prId")
+    val eventTimeZone = getOptStringCol("eventTimeZone")
+      .map(DateTimeZone.forID(_))
+      .getOrElse(EventValidation.defaultTimeZone)
+    val eventTime = new DateTime(
+      getLongCol("eventTime"), eventTimeZone
+    )
+    val creationTimeZone = getOptStringCol("creationTimeZone")
+      .map(DateTimeZone.forID(_))
+      .getOrElse(EventValidation.defaultTimeZone)
+    val creationTime: DateTime = new DateTime(
+      getOptStringCol("creationTime"), creationTimeZone
+    )
+
+    Event(
+      eventId = Some(RowKey(result.getRow()).toString),
+      event = event,
+      entityType = entityType,
+      entityId = entityId,
+      targetEntityType = targetEntityType,
+      targetEntityId = targetEntityId,
+      properties = properties,
+      eventTime = eventTime,
+      tags = Seq(),
+      prId = prId,
+      creationTime = creationTime
+    )
+  }
+
+  def createScan(
+                startTime: Option[DateTime] = None,
+                untilTime: Option[DateTime] = None,
+                entityType: Option[String] = None,
+                entityId: Option[String] = None,
+                eventNames: Option[Seq[String]] = None,
+                targetEntityType: Option[Option[String]] = None,
+                targetEntityId: Option[Option[String]] = None,
+                reversed: Option[Boolean] = None
+                  ): Scan = {
+
+    val scan: Scan = new Scan()
+
+    (entityType, entityId) match {
+      case (Some(et), Some(eid)) => {
+        val start = PartialRowKey(et, eid,
+          startTime.map(_.getMillis)).toBytes
+
+        val stop = PartialRowKey(et, eid,
+          untilTime.map(_.getMillis)).toBytes
+
+        if (reversed.getOrElse(false)) {
+          scan.setStartRow(stop)
+          scan.setStopRow(start)
+          scan.setReversed(true)
+        } else {
+          scan.setStartRow(start)
+          scan.setStopRow(stop)
+        }
+      }
+
+      case (_, _) => {
+        val minTime: Long = startTime.map(_.getMillis).getOrElse(0)
+        val maxTime: Long = untilTime.map(_.getMillis).getOrElse(Long.MaxValue)
+        scan.setTimeRange(minTime, maxTime)
+        if (reversed.getOrElse(false)) {
+          scan.setReversed(true)
+        }
+      }
+    }
+
+    val filters = new FilterList(FilterList.Operator.MUST_PASS_ALL)
+
+    val eBytes = Bytes.toBytes("e")
+
+    def createBinaryFilter(col: String, value: Array[Byte]): SingleColumnValueFilter = {
+      val comp = new BinaryComparator(value)
+      new SingleColumnValueFilter(
+        eBytes, colNames(col), CompareOp.EQUAL, comp
+      )
+    }
+
+    def createSkipRowIfColumnExistFilter(col: String): SkipFilter = {
+      val comp = new BinaryComparator(colNames(col))
+      val q = new QualifierFilter(CompareOp.NOT_EQUAL, comp)
+      new SkipFilter(q)
+      )
+    }
+
+    entityType.foreach { et =>
+      val compType = new BinaryComparator(Bytes.toBytes(et))
+      val filterType = new SingleColumnValueFilter(
+        eBytes, colNames("EntityType"), CompareOp.EQUAL, compType
+      )
+      filters.addFilter(filterType)
+    }
+
+    entityId.foreach { eid =>
+      val compType = new BinaryComparator(Bytes.toBytes(eid))
+      val filterType = new SingleColumnValueFilter(
+        eBytes, colNames("EntityId"), CompareOp.EQUAL, compType
+      )
+      filters.addFilter(filterType)
+    }
+
+    eventNames.foreach { eventsList =>
+      val eventFilters = new FilterList(FilterList.Operator.MUST_PASS_ONE)
+      eventsList.foreach { e =>
+        val compEvent = new BinaryComparator(Bytes.toBytes(e))
+        val filterEvent = new SingleColumnValueFilter(
+          eBytes, colNames("event"), CompareOp.EQUAL, compEvent
+        )
+        eventFilters.addFilter(filterEvent)
+      }
+      if (!eventFilters.getFilters().isEmpty) {
+        filters.addFilter(eventFilters)
+      }
+    }
+
+    targetEntityType.foreach { tetOpt =>
+      if (tetOpt.isEmpty) {
+        val filter = createSkipRowIfColumnExistFilter("targetEntityType")
+        filters.addFilter(filter)
+      } else {
+        tetOpt.foreach { tet =>
+          val filter = createBinaryFilter(
+            "targetEntityType", Bytes.toBytes(tet)
+          )
+          filter.setFilterIfMissing(true)
+          filters.addFilter(filter)
+        }
+      }
+    }
+
+    targetEntityId.foreach { teidOpt =>
+      if (teidOpt.isEmpty) {
+        val filter = createSkipRowIfColumnExistFilter("targetEntityId")
+        filters.addFilter(filter)
+      } else {
+        teidOpt.foreach { teid =>
+          val filter = createBinaryFilter(
+            "targetEntityId", Bytes.toBytes(teid)
+          )
+          filter.setFilterIfMissing(true)
+          filters.addFilter(filter)
+        }
+      }
+    }
+
+    if (!filters.getFilters().isEmpty) {
+      scan.setFilter(filters)
+    }
+
+    scan
+  }
 }
