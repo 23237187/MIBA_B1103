@@ -12,7 +12,7 @@ import zte.MBA.data.storage.{Event, LEvents, StorageClientConfig}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, ExecutionContext}
-import scala
+
 
 
 class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace: String)
