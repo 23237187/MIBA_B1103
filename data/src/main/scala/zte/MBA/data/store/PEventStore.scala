@@ -1,5 +1,7 @@
 package zte.MBA.data.store
 
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.joda.time.DateTime
 import zte.MBA.data.storage.{Event, Storage}
 
@@ -17,11 +19,6 @@ object PEventStore {
           targetEntityType: Option[Option[String]] = None,
           targetEntityId: Option[Option[String]] = None
             )(sc: SparkContext): RDD[Event] = {
-    find(
-      appId = appId,
-      startTime = startTime,
-      untilTime = untilTime,
-      entityType = entityType
-    )
+    val (appId, channelId) = Common
   }
 }
