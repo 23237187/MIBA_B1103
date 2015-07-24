@@ -192,11 +192,11 @@ object Storage extends Logging{
         s"Data Source $sourceName was not properly initialized.", null)
     }
     val sourceType = clientMeta.sourceType
-    val ctorArgs = dataObjectCtorArgs(clientMeta.client, namespace)
+    val ctorArgs = dataObjectCtorArgs(clientMeta.client, namespace)//Constructor Arguments
     //去找具体类,以便能够建立连接
     val classPrefix = clientMeta.client.prefix
     val originalClassName = tag.tpe.toString.split('.')
-    val rawClassName = sourceType + "." + classPrefix + originalClassName.last
+    val rawClassName = sourceType + "." + classPrefix + originalClassName.last//last is LEvents or PEvents
     val className = "zte.MBA.data.storage." + rawClassName
     val clazz = try {
       Class.forName(className)
