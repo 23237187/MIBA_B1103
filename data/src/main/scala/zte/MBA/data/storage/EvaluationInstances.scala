@@ -3,6 +3,7 @@ package zte.MBA.data.storage
 import org.joda.time.DateTime
 import org.json4s.{Extraction, DefaultFormats, CustomSerializer}
 import org.json4s.JsonAST.{JField, JString, JObject}
+import zte.MBA.data.storage.Utils
 
 case class EvaluationInstance(
   id: String = "",
