@@ -174,5 +174,6 @@
     <orderEntry type="library" name="SBT: tomcat:jasper-compiler:5.5.23:jar" level="project" />
     <orderEntry type="library" name="SBT: tomcat:jasper-runtime:5.5.23:jar" level="project" />
     <orderEntry type="library" name="SBT: xmlenc:xmlenc:0.52:jar" level="project" />
+    <orderEntry type="library" name="SBT: org.elasticsearch:elasticsearch:1.4.4:jar" level="project" />
   </component>
 </module>
