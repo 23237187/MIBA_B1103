@@ -27,6 +27,8 @@ libraryDependencies ++= Seq(
     exclude("org.slf4j", "slf4j-log4j12"),
   "org.apache.spark"       %% "spark-core"     % "1.3.0" % "provided",
   "org.apache.spark"       %% "spark-sql"      % "1.3.0" % "provided",
-  "org.elasticsearch"       % "elasticsearch"  % "1.4.4")
+  "org.elasticsearch"       % "elasticsearch"  % "1.4.4",
+  "net.jodah"               % "typetools"      % "0.3.1",
+  "com.google.code.gson"    % "gson"           % "2.2.4")
 
     
