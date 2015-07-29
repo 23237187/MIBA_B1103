@@ -3,6 +3,7 @@ package zte.MBA.controller
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import zte.MBA.core.BaseAlgorithm
+import zte.MBA.workflow.PersistentModelManifest
 
 import scala.reflect.ClassTag
 
@@ -39,9 +40,9 @@ abstract class P2LAlgotithm[PD, M: ClassTag, Q:ClassTag, P]
     bm: Any): Any = {
     val m = bm.asInstanceOf[M]
     if (m.isInstanceOf[PersistentModel[_]]) {
-      if (m.asInstanceOf[PersistentModel[Parmas]].save(
+      if (m.asInstanceOf[PersistentModel[Params]].save(
         modelId, algoParams, sc)) {
-        PersistentModelManifest(clasName = m.getClass.getName)
+        PersistentModelManifest(className = m.getClass.getName)
       } else {
         Unit
       }

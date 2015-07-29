@@ -3,6 +3,7 @@ package zte.MBA.controller
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import zte.MBA.core.BaseAlgorithm
+import zte.MBA.workflow.PersistentModelManifest
 
 import scala.reflect.ClassTag
 
