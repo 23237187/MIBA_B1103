@@ -1,0 +1,171 @@
+package zte.MBA.workflow
+
+import com.google.gson.{JsonSyntaxException, Gson}
+import grizzled.slf4j.Logging
+import org.apache.spark.SparkContext
+import org.json4s.{MappingException, Formats, CustomSerializer}
+import org.json4s.JsonAST._
+import zte.MBA.controller.{EmptyParams, Params, Utils}
+import org.json4s.native.JsonMethods._
+import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
+
+import scala.reflect.runtime.universe
+
+object WorkflowUtils extends Logging {
+  @transient private lazy val gson = new Gson
+
+  def extractNameParams(jv: JValue): NameParams = {
+    implicit val formats = Utils.json4sDefaultFormats
+    val nameOpt = (jv \ "name").extract[Option[String]]
+    val paramsOpt = (jv \ "params").extract[Option[JValue]]
+
+    if (nameOpt.isEmpty && paramsOpt.isEmpty) {
+      error("Unable to find 'name' or 'params' fields in" +
+        s" ${compact(render(jv))}.\n" +
+        "The 'params' field is required in engine.json" +
+        " in order to specify parameters for DataSource, Preparator or" +
+        " Serving.\n")
+      sys.exit(1)
+    }
+
+    if (nameOpt.isEmpty) {
+      info(s"No 'name' is found. Default empty String will be used.")
+    }
+
+    if (paramsOpt.isEmpty) {
+      info(s"No 'params' is found. Default EmptyParams will be used.")
+    }
+
+    NameParams(
+      name =  nameOpt.getOrElse(""),
+      params = paramsOpt
+    )
+  }
+
+  def getParamsFromJsonByFieldAndClass(
+    variantJaon: JValue,
+    field: String,
+    classMap: Map[String, Class[_]],
+    engineLanguage: EngineLanguage.Value,
+    jsonExtractor: JsonExtractorOption): (String, Params) = {
+
+    variantJaon findField {
+      case JField(f, _) => f == field
+      case _ => false
+    } map { jv =>
+      implicit lazy val formats = Utils.json4sDefaultFormats + new NameParamsSerializer
+      val np: NameParams = try {
+        jv._2.extract[NameParams]
+      } catch {
+        case e: Exception =>
+          error(s"Unable to extract $field name and params $jv")
+          throw e
+      }
+
+      val extractedParams = np.params.map { p =>
+        try {
+          if (!classMap.contains(np.name)) {
+            error(s"Unable to find $field class with name '${np.name}'" +
+              " defined in Engine.")
+            sys.exit(1)
+          }
+          WorkflowUtils.extractParams(
+            engineLanguage,
+            compact(render(p)),
+            classMap(np.name),
+            jsonExtractor,
+            formats)
+        } catch {
+          case e: Exception =>
+            error(s"Unable to extract $field params $p")
+            throw e
+        }
+      }.getOrElse(EmptyParams())
+
+      (np.name, extractedParams)
+    } getOrElse("", EmptyParams())
+
+  }
+
+  def extractParams(
+    language: EngineLanguage.Value = EngineLanguage.Scala,
+    json: String,
+    clazz: Class[_],
+    jsonExtractor: JsonExtractorOption,
+    formats: Formats = Utils.json4sDefaultFormats): Params = {
+
+    implicit val f = formats
+    val pClass = clazz.getConstructors.head.getParameterTypes
+    if (pClass.size == 0) {
+      if (json != "") {
+        warn(s"Non-empty parameters supplied to ${clazz.getName}, but its " +
+          "constructor does not accept any arguments. Stubbing with empty " +
+          "parameters.")
+      }
+      EmptyParams()
+    } else {
+      val apClass = pClass.head
+      try {
+        JsonExtractor.extract(jsonExtractor, json, apClass, f).asInstanceOf[Params]
+      } catch {
+        case e@(_: MappingException | _: JsonSyntaxException) =>
+          error(
+            s"Unable to extract parameters for ${apClass.getName} from " +
+              s"JSON string: $json. Aborting workflow.",
+            e)
+          throw e
+      }
+    }
+  }
+}
+
+case class NameParams(name: String, params: Option[JValue])
+
+class NameParamsSerializer extends CustomSerializer[NameParams](format => ({
+  case jv: JValue => WorkflowUtils.extractNameParams(jv)
+}, {
+  case x: NameParams =>
+    JObject(JField("name", JString(x.name)) ::
+      JField("params", x.params.getOrElse(JNothing)) :: Nil)
+}))
+
+object EngineLanguage extends Enumeration {
+  val Scala, Java = Value
+}
+
+object SparkWorkflowUtils extends Logging {
+  def getPersistentModel[AP <: Params, M](
+    pmm: PersistentModelManifest,
+    runId: String,
+    params: AP,
+    sc: Option[SparkContext],
+    cl: ClassLoader): M = {
+
+    val runtimeMirror = universe.runtimeMirror(cl)
+    val pmmModule = runtimeMirror.staticModule(pmm.className)
+    val pmmObject = runtimeMirror.reflectModule(pmmModule)
+    try {
+      pmmObject.instance.asInstanceOf[PersistentModelLoder[AP, M]](
+        runId,
+        params,
+        sc)
+    } catch {
+      case e @ (_: NoSuchFieldException | _: ClassNotFoundException) => try {
+        val loadMethod = Class.forName(pmm.className).getMethod(
+          "load",
+          classOf[String],
+          classOf[Params],
+          classOf[SparkContext])
+        loadMethod.invoke(null, runId, params, sc.orNull).asInstanceOf[M]
+      } catch {
+        case e: ClassNotFoundException =>
+          error(s"Model class ${pmm.className} cannot be found.")
+          throw e
+        case e: NoSuchMethodException =>
+          error(
+            "The load(String, Params, SparkContext) method cannot be found.")
+          throw e
+      }
+    }
+  }
+}
