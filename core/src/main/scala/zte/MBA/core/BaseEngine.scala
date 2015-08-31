@@ -7,9 +7,7 @@ import zte.MBA.controller.EngineParams
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 import zte.MBA.workflow.WorkflowParams
 
-/**
- * Created by root on 15-7-29.
- */
+
 abstract class BaseEngine[EI, Q, P, A] extends Serializable {
 
   def train(

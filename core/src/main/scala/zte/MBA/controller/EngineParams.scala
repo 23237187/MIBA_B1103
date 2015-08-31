@@ -7,7 +7,7 @@ class EngineParams(
   val dataSourceParams: (String, Params) = ("", EmptyParams()),
   val preparatorParams: (String, Params) = ("", EmptyParams()),
   val algorithmParamsList: Seq[(String, Params)] = Seq(),
-  val servingParams: (String, Params) = ("", EmptyParams())
+  val servingParams: (String, Params) = ("", EmptyParams()))
     extends Serializable {
 
   def copy(

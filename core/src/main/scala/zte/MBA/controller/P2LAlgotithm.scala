@@ -33,6 +33,7 @@ abstract class P2LAlgotithm[PD, M: ClassTag, Q:ClassTag, P]
   def predict(model: M, query: Q): P
 
   private[MBA]
+  override
   def makePersistentModel(
     sc: SparkContext,
     modelId: String,

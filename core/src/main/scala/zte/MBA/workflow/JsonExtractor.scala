@@ -35,6 +35,28 @@ object JsonExtractor {
     }
   }
 
+  def paramToJson(extractorOption: JsonExtractorOption, param: (String, Params)): String = {
+    // to be replaced JValue needs to be done by Json4s, otherwise the tuple JValue will be wrong
+    val toBeReplacedJValue =
+      JsonExtractor.toJValue(JsonExtractorOption.Json4sNative, (param._1, null))
+    val paramJValue = JsonExtractor.toJValue(extractorOption, param._2)
+
+    compact(render(toBeReplacedJValue.replace(param._1 :: Nil, paramJValue)))
+  }
+
+  def paramsToJson(extractorOption: JsonExtractorOption, params: Seq[(String, Params)]): String = {
+    val jValues = params.map { case (name, param) =>
+      // to be replaced JValue needs to be done by Json4s, otherwise the tuple JValue will be wrong
+      val toBeReplacedJValue =
+        JsonExtractor.toJValue(JsonExtractorOption.Json4sNative, (name, null))
+      val paramJValue = JsonExtractor.toJValue(extractorOption, param)
+
+      toBeReplacedJValue.replace(name :: Nil, paramJValue)
+    }
+
+    compact(render(JArray(jValues.toList)))
+  }
+
   private def extractWithJson4sNative[T](
     json: String,
     formats: Formats,

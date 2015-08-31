@@ -193,5 +193,7 @@
     <orderEntry type="library" name="SBT: xmlenc:xmlenc:0.52:jar" level="project" />
     <orderEntry type="library" name="SBT: net.jodah:typetools:0.3.1:jar" level="project" />
     <orderEntry type="library" name="SBT: com.google.code.gson:gson:2.2.4:jar" level="project" />
+    <orderEntry type="library" name="SBT: com.github.scopt:scopt_2.10:3.2.0:jar" level="project" />
+    <orderEntry type="module" module-name="data" />
   </component>
 </module>

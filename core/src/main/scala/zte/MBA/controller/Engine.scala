@@ -196,7 +196,7 @@ class Engine[TD, EI, PD, Q, P, A](
   def eval(
     sc: SparkContext,
     engineParams: EngineParams,
-    params: WorkflowParams): Seq[(EI, RDD[Q, P, A])] = {
+    params: WorkflowParams): Seq[(EI, RDD[(Q, P, A)])] = {
 
     val (dataSourceName, dataSourceParams) = engineParams.dataSourceParams
     val dataSource = Doer(dataSourceClassMap(dataSourceName), dataSourceParams)

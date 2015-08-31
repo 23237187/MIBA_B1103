@@ -2,10 +2,11 @@ package zte.MBA.workflow
 
 import com.google.gson.{JsonSyntaxException, Gson}
 import grizzled.slf4j.Logging
+import org.apache.log4j.{LogManager, Level}
 import org.apache.spark.SparkContext
 import org.json4s.{MappingException, Formats, CustomSerializer}
 import org.json4s.JsonAST._
-import zte.MBA.controller.{EmptyParams, Params, Utils}
+import zte.MBA.controller.{EngineFactory, EmptyParams, Params, Utils}
 import org.json4s.native.JsonMethods._
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 
@@ -116,6 +117,97 @@ object WorkflowUtils extends Logging {
           throw e
       }
     }
+  }
+
+  def modifyLogging(verbose: Boolean): Unit = {
+    val rootLoggerLevel = if (verbose) Level.TRACE else Level.INFO
+    val chattyLoggerLevel = if (verbose) Level.INFO else Level.WARN
+
+    LogManager.getRootLogger.setLevel(rootLoggerLevel)
+
+    LogManager.getLogger("org.elasticsearch").setLevel(chattyLoggerLevel)
+    LogManager.getLogger("org.apache.hadoop").setLevel(chattyLoggerLevel)
+    LogManager.getLogger("org.apache.spark").setLevel(chattyLoggerLevel)
+    LogManager.getLogger("org.eclipse.jetty").setLevel(chattyLoggerLevel)
+    LogManager.getLogger("akka").setLevel(chattyLoggerLevel)
+  }
+
+  def getEngine(engine: String, cl: ClassLoader): (EngineLanguage.Value, EngineFactory) = {
+    val runtimeMirror = universe.runtimeMirror(cl)
+    val engineModule = runtimeMirror.staticModule(engine)
+    val engineObject = runtimeMirror.reflectModule(engineModule)
+    try {
+      (
+        EngineLanguage.Scala,
+        engineObject.instance.asInstanceOf[EngineFactory]
+        )
+    } catch {
+      case e @ (_: NoSuchFieldException | _: ClassNotFoundException) => try {
+        (
+          EngineLanguage.Java,
+          Class.forName(engine).newInstance.asInstanceOf[EngineFactory]
+          )
+      }
+    }
+  }
+
+  def getEvaluation(evaluation: String, cl: ClassLoader): (EngineLanguage.Value, Evaluation) = {
+    val runtimeMirror = universe.runtimeMirror(cl)
+    val evaluationModule = runtimeMirror.staticModule(evaluation)
+    val evaluationObject = runtimeMirror.reflectModule(evaluationModule)
+    try {
+      (
+        EngineLanguage.Scala,
+        evaluationObject.instance.asInstanceOf[Evaluation]
+        )
+    } catch {
+      case e @ (_: NoSuchFieldException | _: ClassNotFoundException) => try {
+        (
+          EngineLanguage.Java,
+          Class.forName(evaluation).newInstance.asInstanceOf[Evaluation]
+          )
+      }
+    }
+  }
+
+  def getEngineParamsGenerator(epg: String, cl: ClassLoader):
+  (EngineLanguage.Value, EngineParamsGenerator) = {
+    val runtimeMirror = universe.runtimeMirror(cl)
+    val epgModule = runtimeMirror.staticModule(epg)
+    val epgObject = runtimeMirror.reflectModule(epgModule)
+    try {
+      (
+        EngineLanguage.Scala,
+        epgObject.instance.asInstanceOf[EngineParamsGenerator]
+        )
+    } catch {
+      case e @ (_: NoSuchFieldException | _: ClassNotFoundException) => try {
+        (
+          EngineLanguage.Java,
+          Class.forName(epg).newInstance.asInstanceOf[EngineParamsGenerator]
+          )
+      }
+    }
+  }
+
+  def extractSparkConf(root: JValue): List[(String, String)] = {
+    def flatten(jv: JValue): List[(List[String], String)] = {
+      jv match {
+        case JObject(fields) =>
+          for ((namePrefix, childJV) <- fields;
+               (name, value) <- flatten(childJV))
+            yield (namePrefix :: name) -> value
+        case JArray(_) => {
+          error("Arrays are not allowed in the sparkConf section of engine.js.")
+          sys.exit(1)
+        }
+        case JNothing => List()
+        case _ => List(List() -> jv.values.toString)
+      }
+    }
+
+    flatten(root \ "sparkConf").map(x =>
+      (x._1.reduce((a, b) => s"$a.$b"), x._2))
   }
 }
 
