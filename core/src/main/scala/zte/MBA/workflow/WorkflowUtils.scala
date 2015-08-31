@@ -8,7 +8,7 @@ import org.apache.log4j.{LogManager, Level}
 import org.apache.spark.SparkContext
 import org.json4s.{BuildInfo, MappingException, Formats, CustomSerializer}
 import org.json4s.JsonAST._
-import zte.MBA.controller.{EngineFactory, EmptyParams, Params, Utils}
+import zte.MBA.controller._
 import org.json4s.native.JsonMethods._
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 

@@ -1,7 +1,7 @@
 package zte.MBA.workflow
 
-import zte.MBA.controller.EngineParams
-import zte.MBA.core.BaseEngine
+import zte.MBA.controller.{EngineParamsGenerator, Evaluation, EngineParams}
+import zte.MBA.core.{BaseEvaluator, BaseEvaluatorResult, BaseEngine}
 import zte.MBA.data.storage.EvaluationInstance
 
 
@@ -45,7 +45,7 @@ object Workflow {
         params = params)
   }
 
-  def runEvaluatio[EI, Q, P, A, R <: BaseEvaluatorResult](
+  def runEvaluation[EI, Q, P, A, R <: BaseEvaluatorResult](
       evaluation: Evaluation,
       engine: BaseEngine[EI, Q, P, A],
       engineParamsList: Seq[EngineParams],

@@ -7,6 +7,7 @@ import org.json4s.JsonAST.{JArray, JField, JValue}
 import zte.MBA.core._
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 import zte.MBA.workflow._
+import zte.MBA.workflow.CreateWorkflow
 
 import scala.collection.JavaConversions
 
