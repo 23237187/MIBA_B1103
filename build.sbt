@@ -31,6 +31,10 @@ libraryDependencies ++= Seq(
   "net.jodah"               % "typetools"      % "0.3.1",
   "com.google.code.gson"    % "gson"           % "2.2.4",
   "com.github.scopt"       %% "scopt"          % "3.2.0",
-  "com.github.nscala-time" %% "nscala-time"    % "2.0.0")
+  "com.github.nscala-time" %% "nscala-time"    % "2.0.0",
+  "com.twitter"            %% "chill"          % "0.5.0"
+    exclude("com.esotericsoftware.minlog", "minlog"),
+  "com.twitter"            %% "chill-bijection"  % "0.5.0",
+  "de.javakaffee"           % "kryo-serializers" % "0.28")
 
     

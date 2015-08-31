@@ -196,5 +196,8 @@
     <orderEntry type="library" name="SBT: com.github.scopt:scopt_2.10:3.2.0:jar" level="project" />
     <orderEntry type="module" module-name="data" />
     <orderEntry type="library" name="SBT: com.github.nscala-time:nscala-time_2.10:2.0.0:jar" level="project" />
+    <orderEntry type="library" name="SBT: de.javakaffee:kryo-serializers:0.28:jar" level="project" />
+    <orderEntry type="library" name="SBT: com.twitter:bijection-core_2.10:0.7.0:jar" level="project" />
+    <orderEntry type="library" name="SBT: com.twitter:chill-bijection_2.10:0.5.0:jar" level="project" />
   </component>
 </module>

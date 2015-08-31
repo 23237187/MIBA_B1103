@@ -298,3 +298,9 @@ class UpgradeCheckRunner(
   }
 }
 
+class WorkflowInterruption() extends Exception
+
+case class StopAfterReadInterruption() extends WorkflowInterruption
+
+case class StopAfterPrepareInterruption() extends WorkflowInterruption
+

@@ -1,8 +1,8 @@
 package zte.MBA.workflow
 
 import grizzled.slf4j.Logger
-import zte.MBA.controller.EngineParams
-import zte.MBA.core.BaseEngine
+import zte.MBA.controller.{Evaluation, EngineParams}
+import zte.MBA.core.{BaseEvaluator, BaseEvaluatorResult, BaseEngine}
 import zte.MBA.data.storage.{EvaluationInstance, Model, EngineInstance, Storage}
 
 import com.github.nscala_time.time.Imports.DateTime
@@ -36,13 +36,13 @@ object CoreWorkflow {
       val models: Seq[Any] = engine.train(
         sc = sc,
         engineParams = engineParams,
-        engineInstanceId = engineInstances.id,
+        engineInstanceId = engineInstance.id,
         params = params
       )
 
       val instanceId = Storage.getMetaDataEngineInstances()
 
-      val kryo = KyroInstantiator.newKryoInjection
+      val kryo = KryoInstantiator.newKryoInjection
 
       logger.info("Inserting persistent model")
       Storage.getModelDataModels.insert(Model(
