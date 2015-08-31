@@ -14,7 +14,7 @@ import zte.MBA.data.storage.{EvaluationInstance, EngineInstance, Storage}
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 
 
-class CreateWorkflow extends Logging {
+object CreateWorkflow extends Logging {
 
   case class WorkflowConfig(
     deployMode: String = "",
