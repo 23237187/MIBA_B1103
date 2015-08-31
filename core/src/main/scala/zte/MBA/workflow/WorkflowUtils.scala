@@ -1,16 +1,19 @@
 package zte.MBA.workflow
 
+import java.io.FileNotFoundException
+
 import com.google.gson.{JsonSyntaxException, Gson}
 import grizzled.slf4j.Logging
 import org.apache.log4j.{LogManager, Level}
 import org.apache.spark.SparkContext
-import org.json4s.{MappingException, Formats, CustomSerializer}
+import org.json4s.{BuildInfo, MappingException, Formats, CustomSerializer}
 import org.json4s.JsonAST._
 import zte.MBA.controller.{EngineFactory, EmptyParams, Params, Utils}
 import org.json4s.native.JsonMethods._
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 
 import scala.reflect.runtime.universe
+import scala.io.Source
 
 object WorkflowUtils extends Logging {
   @transient private lazy val gson = new Gson
@@ -209,6 +212,16 @@ object WorkflowUtils extends Logging {
     flatten(root \ "sparkConf").map(x =>
       (x._1.reduce((a, b) => s"$a.$b"), x._2))
   }
+
+  def mbaEnvVars: Map[String, String] =
+    sys.env.filter(kv => kv._1.startsWith("MBA_"))
+
+  private[mba] def checkUpgrade(
+    component: String = "core",
+    engine: String = ""): Unit = {
+    val runner = new Thread(new UpgradeCheckRunner(component, engine))
+    runner.start()
+  }
 }
 
 case class NameParams(name: String, params: Option[JValue])
@@ -261,3 +274,27 @@ object SparkWorkflowUtils extends Logging {
     }
   }
 }
+
+class UpgradeCheckRunner(
+  val component: String,
+  val engine: String) extends Runnable with Logging {
+  val version = BuildInfo.version
+  val versionsHost = "http://direct.prediction.io/"
+
+  def run(): Unit = {
+    val url = if (engine == "") {
+      s"$versionsHost$version/$component.json"
+    } else {
+      s"$versionsHost$version/$component/$engine.json"
+    }
+    try {
+      val upgradeData = Source.fromURL(url)
+    } catch {
+      case e: FileNotFoundException => {
+        debug(s"Update metainfo not found. $url")
+      }
+    }
+
+  }
+}
+

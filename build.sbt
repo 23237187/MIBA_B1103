@@ -30,6 +30,7 @@ libraryDependencies ++= Seq(
   "org.elasticsearch"       % "elasticsearch"  % "1.4.4",
   "net.jodah"               % "typetools"      % "0.3.1",
   "com.google.code.gson"    % "gson"           % "2.2.4",
-  "com.github.scopt"       %% "scopt"          % "3.2.0")
+  "com.github.scopt"       %% "scopt"          % "3.2.0",
+  "com.github.nscala-time" %% "nscala-time"    % "2.0.0")
 
     
