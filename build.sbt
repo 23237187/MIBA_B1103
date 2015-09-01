@@ -35,6 +35,10 @@ libraryDependencies ++= Seq(
   "com.twitter"            %% "chill"          % "0.5.0"
     exclude("com.esotericsoftware.minlog", "minlog"),
   "com.twitter"            %% "chill-bijection"  % "0.5.0",
-  "de.javakaffee"           % "kryo-serializers" % "0.28")
+  "de.javakaffee"           % "kryo-serializers" % "0.28",
+  "org.spark-project.akka" %% "akka-actor"       % "2.3.4-spark",
+  "org.scalaj"             %% "scalaj-http"      % "1.1.0",
+  "io.spray"               %% "spray-can"        % "1.3.2",
+  "io.spray"               %% "spray-routing"    % "1.3.2")
 
     

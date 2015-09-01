@@ -5,7 +5,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.json4s.JsonAST.{JArray, JField, JValue}
 import zte.MBA.core._
-import zte.MBA.data.storage.StorageClientException
+import zte.MBA.data.storage.{EngineInstance, StorageClientException}
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 import zte.MBA.workflow._
 import zte.MBA.workflow.CreateWorkflow
@@ -306,6 +306,78 @@ class Engine[TD, EI, PD, Q, P, A](
     )
 
   }
+
+  private[mba] def engineInstanceToEngineParams(
+    engineInstance: EngineInstance,
+    jsonExtractor: JsonExtractorOption): EngineParams = {
+
+    implicit val formats = DefaultFormats
+    val engineLanguage = EngineLanguage.Scala
+
+    val dataSourceParamsWithName: (String, Params) = {
+      val (name, params) =
+        read[(String, JValue)](engineInstance.dataSourceParams)
+      if (!dataSourceClassMap.contains(name)) {
+        logger.error(s"Unable to find datasource class with name '$name'" +
+          " defined in Engine.")
+        sys.exit(1)
+      }
+      val extractedParams = WorkflowUtils.extractParams(
+        engineLanguage,
+        compact(render(params)),
+        dataSourceClassMap(name),
+        jsonExtractor)
+      (name, extractedParams)
+    }
+
+    val preparatorParamsWithName: (String, Params) = {
+      val (name, params) =
+        read[(String, JValue)](engineInstance.preparatorParams)
+      if (!preparatorClassMap.contains(name)) {
+        logger.error(s"Unable to find preparator class with name '$name'" +
+          " defined in Engine.")
+        sys.exit(1)
+      }
+      val extractedParams = WorkflowUtils.extractParams(
+        engineLanguage,
+        compact(render(params)),
+        preparatorClassMap(name),
+        jsonExtractor)
+      (name, extractedParams)
+    }
+
+    val algorithmsParamsWithNames =
+      read[Seq[(String, JValue)]](engineInstance.algorithmsParams).map {
+        case (algoName, params) =>
+          val extractedParams = WorkflowUtils.extractParams(
+            engineLanguage,
+            compact(render(params)),
+            algorithmClassMap(algoName),
+            jsonExtractor)
+          (algoName, extractedParams)
+      }
+
+    val servingParamsWithName: (String, Params) = {
+      val (name, params) = read[(String, JValue)](engineInstance.servingParams)
+      if (!servingClassMap.contains(name)) {
+        logger.error(s"Unable to find serving class with name '$name'" +
+          " defined in Engine.")
+        sys.exit(1)
+      }
+      val extractedParams = WorkflowUtils.extractParams(
+        engineLanguage,
+        compact(render(params)),
+        servingClassMap(name),
+        jsonExtractor)
+      (name, extractedParams)
+    }
+
+    new EngineParams(
+      dataSourceParams = dataSourceParamsWithName,
+      preparatorParams = preparatorParamsWithName,
+      algorithmParamsList = algorithmsParamsWithNames,
+      servingParams = servingParamsWithName)
+  }
 }
 
 object Engine {
@@ -532,4 +604,8 @@ object Engine {
 
   }
 
+}
+
+trait WithPrId {
+  val prId: String = ""
 }

@@ -1,9 +1,10 @@
 package zte.MBA.workflow
 
 import com.google.gson.{GsonBuilder, Gson, TypeAdapterFactory}
+import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.reflect.TypeInfo
 import org.json4s.{Extraction, Formats}
-import zte.MBA.controller.Utils
+import zte.MBA.controller.{Params, Utils}
 import zte.MBA.workflow.JsonExtractorOption.JsonExtractorOption
 
 import org.json4s.native.JsonMethods._
@@ -11,7 +12,26 @@ import org.json4s.native.JsonMethods._
 
 object JsonExtractor {
 
-  
+  def toJValue(
+    extractorOption: JsonExtractorOption,
+    o: Any,
+    json4sFormats: Formats = Utils.json4sDefaultFormats,
+    gsonTypeAdapterFactories: Seq[TypeAdapterFactory] = Seq.empty[TypeAdapterFactory]): JValue = {
+
+    extractorOption match {
+      case JsonExtractorOption.Both =>
+
+        val json4sResult = Extraction.decompose(o)(json4sFormats)
+        json4sResult.children.size match {
+          case 0 => parse(gson(gsonTypeAdapterFactories).toJson(o))
+          case _ => json4sResult
+        }
+      case JsonExtractorOption.Json4sNative =>
+        Extraction.decompose(o)(json4sFormats)
+      case JsonExtractorOption.Gson =>
+        parse(gson(gsonTypeAdapterFactories).toJson(o))
+    }
+  }
 
   def extract[T](
     extractorOption: JsonExtractorOption,
@@ -28,7 +48,7 @@ object JsonExtractor {
           case e: Exception =>
             extractWithGson(json, clazz, gsonTypeAdapterFactories)
         }
-      case JsonExtractorOption.Json4SNative =>
+      case JsonExtractorOption.Json4sNative =>
         extractWithJson4sNative(json, json4sFormats, clazz)
       case JsonExtractorOption.Gson =>
         extractWithGson(json, clazz, gsonTypeAdapterFactories)
