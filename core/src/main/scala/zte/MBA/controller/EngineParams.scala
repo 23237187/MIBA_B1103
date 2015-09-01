@@ -48,7 +48,7 @@ class SimpleEngine[TD, EI, Q, P, A](
   algorithmClass: Class[_ <: BaseAlgorithm[TD, _, Q, P]])
   extends Engine(
     dataSourceClass,
-    IndentityPreparator(dataSourceClass),
+    IdentityPreparator(dataSourceClass),
     Map("" -> algorithmClass),
     LFirstServing(algorithmClass))
 
